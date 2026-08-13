@@ -1,0 +1,10 @@
+# Pins the toolchain and — crucially — the wasm32-wasip2 target, so `rustup`
+# installs it automatically on your first build. This is why you don't have to
+# run `rustup target add` yourself.
+#
+# The channel matches the Ferrofin server's pinned toolchain. Bumping it is
+# usually fine (WASM components are toolchain-independent once built); keep it
+# at or below the version you know builds cleanly.
+[toolchain]
+channel = "1.97.1"
+targets = ["wasm32-wasip2"]

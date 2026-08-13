@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────────────────────────────────
+# Ferrofin plugin — build config. You should not need to touch anything here
+# except the [package] name/version/description.
+#
+# Build:  ./build.sh   (or:  cargo build --release --target wasm32-wasip2)
+# Output: dist/<name>.wasm  →  drop into {ferrofin_data_dir}/plugins/, restart
+# ─────────────────────────────────────────────────────────────────────────
+[package]
+# TODO: rename this to your plugin's crate name (lowercase-with-dashes).
+name = "ferrofin-plugin-template"
+version = "0.1.0"
+edition = "2021"
+# TODO: choose your plugin's license (this is YOUR code). See README "Licensing".
+license = "MIT OR Apache-2.0"
+description = "A Ferrofin WASM plugin."
+publish = false
+
+# A WASM component is a standalone artifact, not part of a Cargo workspace.
+[workspace]
+
+[lib]
+# cdylib is what compiles to a `.wasm` on the wasm32-wasip2 target.
+crate-type = ["cdylib"]
+
+[dependencies]
+# The only required dependency: it turns wit/ferrofin-plugin.wit into the Rust
+# `Guest` trait + `host` bindings you implement in src/lib.rs.
+wit-bindgen = "0.60"
+# Add whatever your plugin needs (serde_json is a common one for parsing the
+# config JSON and any http-fetch response bodies). Remember: no crate that
+# touches the filesystem or opens sockets will work — the sandbox denies both.
+
+[profile.release]
+# Small artifacts load faster and keep the plugin's memory footprint low.
+opt-level = "s"
+lto = true
+strip = true

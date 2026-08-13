@@ -1,0 +1,10 @@
+# Rust build output
+/target
+
+# Built plugin artifacts — rebuild them from source, don't commit binaries.
+/dist
+*.wasm
+
+# Editor / OS noise
+*.swp
+.DS_Store
