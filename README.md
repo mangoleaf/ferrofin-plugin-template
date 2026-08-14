@@ -103,6 +103,7 @@ spirit — return the empty/`None` default for anything you don't need:
 |---|---|---|
 | `descriptor()` | once at load — your id, name, version | *(required)* |
 | `default_config()` | first install — the seed config JSON | `"{}"` |
+| `config_pages()` | at load — your dashboard settings page(s) | `vec![]` *(Ferrofin then shows a generic JSON editor for your config)* |
 | `tasks()` | at load — the dashboard tasks you offer | `vec![]` |
 | `run_task(id)` | when a task runs (on demand or scheduled) | — |
 | `on_event(name, json)` | on each server event while enabled | *(do nothing)* |
@@ -146,12 +147,25 @@ Practical consequences for you: **don't add crates that touch files or sockets**
 quick (there's a per-call deadline). Hold state in `static`s if you must, but
 treat the config JSON and the library as your only durable storage.
 
-## Configuration
+## Configuration & your settings page
 
-`default_config()` returns the JSON seeded on first install. The admin edits it
-in the dashboard; you read the current value with `host::get_config()` (it comes
-back as a JSON string — parse it however you like, e.g. add `serde_json` to
-`Cargo.toml`). A plugin that needs no config just returns `"{}"`.
+`default_config()` returns the JSON seeded on first install; you read the
+current value with `host::get_config()` (a JSON string — parse it however you
+like, e.g. add `serde_json` to `Cargo.toml`). A plugin that needs no config
+just returns `"{}"`.
+
+The admin edits that JSON through **your settings page**: `config_pages()`
+returns raw HTML in the standard jellyfin-web plugin-page shape (see the
+worked example in `src/lib.rs` — a `data-role="page"` root plus an inline
+script that loads the config with `ApiClient.getPluginConfiguration` and saves
+it with `ApiClient.updatePluginConfiguration`). The dashboard shows a
+**Settings** button on your plugin automatically. Ship no page and Ferrofin
+synthesizes a generic JSON editor instead, so your plugin is configurable
+either way.
+
+**Trust note:** your page's HTML/JS runs in the *admin's browser* with the
+admin's session — it is dashboard code, not sandboxed plugin code. (This is
+exactly how Jellyfin plugin pages work.)
 
 ## Other languages
 
@@ -163,7 +177,7 @@ loadable plugin. If you go that route, this repo is still useful as the contract
 
 ## Contract version
 
-The vendored `wit/ferrofin-plugin.wit` is `ferrofin:plugin@0.1.0`. **It is 0.x
+The vendored `wit/ferrofin-plugin.wit` is `ferrofin:plugin@0.2.0`. **It is 0.x
 and unstable** — a minor bump may require rebuilding, and the server refuses to
 load a component built against a different version (it names both versions in
 the error). To target a newer server, replace `wit/ferrofin-plugin.wit` with

@@ -43,10 +43,74 @@ impl Guest for Plugin {
     }
 
     /// The configuration JSON written on first install. The admin edits it in
-    /// the dashboard; you read it back with `host::get_config()`. Return `{}`
-    /// if your plugin needs no configuration.
+    /// the dashboard (through your settings page below); you read it back
+    /// with `host::get_config()`. Return `{}` if your plugin needs no
+    /// configuration.
     fn default_config() -> String {
-        r#"{}"#.to_owned()
+        r#"{"Greeting":"Hello from my plugin"}"#.to_owned()
+    }
+
+    /// Your dashboard settings page(s). This worked example edits the
+    /// `Greeting` value from `default_config()` — the full round trip the
+    /// dashboard uses: load with `ApiClient.getPluginConfiguration`, save
+    /// with `ApiClient.updatePluginConfiguration` (which lands in
+    /// `host::get_config()` on your side).
+    ///
+    /// The shape is the standard jellyfin-web plugin page: a
+    /// `data-role="page"` root plus an inline script that may use the
+    /// dashboard globals (`ApiClient`, `Dashboard`). Return `vec![]` to ship
+    /// no page — Ferrofin then shows a generic JSON editor for your config
+    /// instead, so your plugin stays configurable either way.
+    fn config_pages() -> Vec<ConfigPage> {
+        // Your plugin id, single-sourced from Cargo.toml like descriptor().
+        let id = env!("FERROFIN_PLUGIN_GUID");
+        let html = format!(
+            r#"<div id="myPluginConfig" data-role="page" class="page type-interior pluginConfigurationPage">
+  <div data-role="content"><div class="content-primary">
+    <form class="myPluginForm">
+      <h1>{name}</h1>
+      <div class="inputContainer">
+        <label class="inputLabel" for="myPluginGreeting">Greeting</label>
+        <input is="emby-input" id="myPluginGreeting" type="text" />
+        <div class="fieldDescription">Logged by the "Say hello" task.</div>
+      </div>
+      <button is="emby-button" type="submit" class="raised button-submit block"><span>Save</span></button>
+    </form>
+  </div></div>
+  <script type="text/javascript">
+  (function () {{
+    var pluginId = '{id}';
+    var page = document.querySelector('#myPluginConfig');
+    page.addEventListener('pageshow', function () {{
+      Dashboard.showLoadingMsg();
+      ApiClient.getPluginConfiguration(pluginId).then(function (config) {{
+        page.querySelector('#myPluginGreeting').value = config.Greeting || '';
+        Dashboard.hideLoadingMsg();
+      }});
+    }});
+    page.querySelector('.myPluginForm').addEventListener('submit', function (e) {{
+      e.preventDefault();
+      Dashboard.showLoadingMsg();
+      ApiClient.getPluginConfiguration(pluginId).then(function (config) {{
+        config.Greeting = page.querySelector('#myPluginGreeting').value;
+        ApiClient.updatePluginConfiguration(pluginId, config).then(
+          Dashboard.processPluginConfigurationUpdateResult
+        );
+      }});
+      return false;
+    }});
+  }})();
+  </script>
+</div>
+"#,
+            name = env!("FERROFIN_PLUGIN_NAME"),
+        );
+        vec![ConfigPage {
+            // Unique server-wide; the dashboard fetches your page by this.
+            name: "my-plugin-config".to_owned(),
+            content: html.into_bytes(),
+            enable_in_main_menu: false,
+        }]
     }
 
     /// The background tasks your plugin offers. They appear in the dashboard's
@@ -66,7 +130,15 @@ impl Guest for Plugin {
     fn run_task(task_id: String) -> Result<(), String> {
         match task_id.as_str() {
             "hello" => {
-                host::log(LogLevel::Info, "Hello from my Ferrofin plugin!");
+                // Read the greeting the admin saved on your settings page.
+                // (Crude string scan to keep the skeleton dependency-free —
+                // add serde_json to Cargo.toml for real config parsing.)
+                let config = host::get_config();
+                let greeting = config
+                    .split_once("\"Greeting\":\"")
+                    .and_then(|(_, rest)| rest.split_once('"'))
+                    .map_or("Hello from my Ferrofin plugin!", |(v, _)| v);
+                host::log(LogLevel::Info, greeting);
                 Ok(())
             }
             other => Err(format!("unknown task `{other}`")),
