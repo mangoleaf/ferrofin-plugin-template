@@ -86,7 +86,7 @@ impl Guest for Plugin {
       ApiClient.getPluginConfiguration(pluginId).then(function (config) {{
         page.querySelector('#myPluginGreeting').value = config.Greeting || '';
         Dashboard.hideLoadingMsg();
-      }});
+      }}).catch(Dashboard.processErrorResponse);
     }});
     page.querySelector('.myPluginForm').addEventListener('submit', function (e) {{
       e.preventDefault();
@@ -95,8 +95,8 @@ impl Guest for Plugin {
         config.Greeting = page.querySelector('#myPluginGreeting').value;
         ApiClient.updatePluginConfiguration(pluginId, config).then(
           Dashboard.processPluginConfigurationUpdateResult
-        );
-      }});
+        ).catch(Dashboard.processErrorResponse);
+      }}).catch(Dashboard.processErrorResponse);
       return false;
     }});
   }})();
