@@ -27,9 +27,9 @@ git clone <this-repo> my-ferrofin-plugin && cd my-ferrofin-plugin
 
 # 2. Give your plugin a unique identity.
 uuidgen        # copy the result…
-#   …and paste it into descriptor().id in src/lib.rs (replace the all-zeros
-#   placeholder). Also set the name/description there, and rename the crate in
-#   Cargo.toml's [package] name.
+#   …and paste it into [package.metadata.ferrofin] guid in Cargo.toml (also
+#   set name/description there — descriptor() reads them at build time).
+#   Rename the crate in [package] name too.
 
 # 3. Write your plugin: edit src/lib.rs (it compiles and runs as-is to start).
 
@@ -48,42 +48,51 @@ That's the whole loop. From here you only ever touch `src/lib.rs` (and
 
 ## Releasing & distribution
 
-When you push this repo to GitHub, the included workflows handle versioned
-releases for you (`.github/workflows/`):
+When you push this repo to GitHub, the included workflows (`.github/workflows/`,
+all actions pinned by commit SHA) give you the full Jellyfin-style distribution
+flow: users add your repository URL to Ferrofin **once**, then install and
+update your plugin from the dashboard — the server downloads, verifies, and
+stages it; a restart activates it.
 
-- **`ci.yml`** builds the plugin on every push/PR and uploads the `.wasm` as a
-  run artifact — a build check.
-- **`release.yml`** cuts a **GitHub Release automatically when you bump the
-  version**. `Cargo.toml`'s `version` (semver `MAJOR.MINOR.PATCH`) is the single
-  source of truth — it's also what your plugin reports to Ferrofin. Bump it,
-  merge to `main`, and the workflow builds the plugin, tags `vX.Y.Z`, and
-  publishes a release with the `.wasm` attached. Unchanged version → no release,
-  so ordinary commits don't cut one. (Prefer manual tags? Delete `release.yml`
-  and push `vX.Y.Z` tags yourself against a `files: dist/*.wasm` release step.)
+**Releasing** is one step: bump `version` in `Cargo.toml` (semver
+`MAJOR.MINOR.PATCH`) and merge to `main`. The release workflow then:
 
-**Pull URLs.** The release asset keeps a constant name (your crate name with
-underscores, e.g. `my_plugin.wasm`), so these URLs are stable:
+1. builds the `.wasm` and publishes a `vX.Y.Z` GitHub Release with it attached;
+2. regenerates `manifest.json` from **all** releases — for each version:
+   the asset's download URL, its MD5 (`checksum`, the Jellyfin-standard field),
+   its SHA-256 (`sha256`, Ferrofin's stronger extension — preferred by the
+   server), and the `targetAbi` read from the vendored WIT contract;
+3. publishes the manifest to the `gh-pages` branch.
+
+Identity (guid/name/description) comes from `[package.metadata.ferrofin]` in
+`Cargo.toml` — the same values `descriptor()` compiles in via `build.rs`, so
+the id your plugin reports at runtime can never drift from its catalog entry
+(Ferrofin verifies this at install time and refuses mismatches).
+
+**One-time setup** after pushing to GitHub: enable Pages
+(Settings → Pages → *Deploy from a branch* → `gh-pages`). Your repository URL
+is then:
 
 ```
-# newest release
-https://github.com/<owner>/<repo>/releases/latest/download/<crate_name>.wasm
-# a pinned version
-https://github.com/<owner>/<repo>/releases/download/vX.Y.Z/<crate_name>.wasm
+https://<owner>.github.io/<repo>/manifest.json
 ```
 
-**Installing from a URL.** Ferrofin does **not** fetch plugins from a URL — you
-(or an admin) download the `.wasm` and drop it in, then restart:
+**How users install** (the primary flow — no shell access needed):
+
+1. Ferrofin dashboard → Plugins → Repositories → add the URL above.
+2. Catalog → your plugin → Install. The server downloads it over HTTPS,
+   verifies the checksum, validates it is a real `ferrofin:plugin` component
+   with the right ABI and identity, and stages it.
+3. Restart Ferrofin (the dashboard shows the pending-restart flag). Done —
+   enable/configure it under Plugins.
+
+**Manual install** (dev workflow / air-gapped servers): build locally and drop
+the artifact in yourself:
 
 ```sh
-curl -L -o {ferrofin_data_dir}/plugins/<crate_name>.wasm \
-  https://github.com/<owner>/<repo>/releases/latest/download/<crate_name>.wasm
-# …then restart Ferrofin and enable the plugin in the dashboard.
+./build.sh
+cp dist/*.wasm {ferrofin_data_dir}/plugins/   # then restart Ferrofin
 ```
-
-That's a manual (or scripted) step on the server side — there is no in-dashboard
-"install from URL" yet.
-
----
 
 ## What you implement
 

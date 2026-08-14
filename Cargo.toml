@@ -15,6 +15,19 @@ license = "MIT OR Apache-2.0"
 description = "A Ferrofin WASM plugin."
 publish = false
 
+# ── Your plugin's identity — the single source of truth ─────────────────
+# Read by build.rs (which feeds descriptor() in src/lib.rs) AND by
+# scripts/gen-manifest.sh (which builds the repository manifest), so the id
+# your plugin reports at runtime can never drift from the catalog entry.
+# ⚠️ TODO after cloning: run `uuidgen` and replace the guid — two plugins
+# with the same guid collide.
+[package.metadata.ferrofin]
+guid = "77d9370b-2875-44f8-be55-decd46652c49"
+name = "Hello Ferrofin"
+description = "The hello-world Ferrofin plugin: logs a greeting from a scheduled task."
+owner = "mangoleaf"
+category = "General"
+
 # A WASM component is a standalone artifact, not part of a Cargo workspace.
 [workspace]
 

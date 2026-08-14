@@ -8,3 +8,6 @@
 # Editor / OS noise
 *.swp
 .DS_Store
+
+# generated repository manifest (published to gh-pages by CI)
+/site

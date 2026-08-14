@@ -29,16 +29,16 @@ use ferrofin::plugin::types::LogLevel;
 struct Plugin;
 
 impl Guest for Plugin {
-    /// Your plugin's identity. Called once at load.
+    /// Your plugin's identity. Called once at load. All values come from
+    /// `[package.metadata.ferrofin]` in Cargo.toml (via build.rs) — edit them
+    /// THERE, so the manifest generator and the runtime can never disagree.
     fn descriptor() -> PluginDescriptor {
         PluginDescriptor {
-            // ⚠️ TODO: generate your OWN id and paste it here. Run:  uuidgen
-            // Two plugins with the same id collide — the host loads only one.
-            id: "00000000-0000-0000-0000-000000000000".to_owned(),
-            name: "My Ferrofin Plugin".to_owned(),
-            // Reuses the crate version from Cargo.toml — bump it there.
+            id: env!("FERROFIN_PLUGIN_GUID").to_owned(),
+            name: env!("FERROFIN_PLUGIN_NAME").to_owned(),
+            // The crate version from Cargo.toml — bump it there to release.
             version: env!("CARGO_PKG_VERSION").to_owned(),
-            description: "Describe what your plugin does, in one line.".to_owned(),
+            description: env!("FERROFIN_PLUGIN_DESCRIPTION").to_owned(),
         }
     }
 
