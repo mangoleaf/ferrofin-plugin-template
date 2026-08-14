@@ -1,0 +1,11 @@
+# Keeps the SHA-pinned actions in .github/workflows/ up to date: Dependabot
+# opens a PR bumping the pinned commit (and the trailing "# vN" comment)
+# whenever an action releases. This is how pinned SHAs stay maintainable —
+# you get the supply-chain safety of immutable pins without hand-tracking
+# upstream releases.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

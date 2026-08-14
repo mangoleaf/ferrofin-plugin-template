@@ -47,11 +47,9 @@ jobs:
             echo "new=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - if: steps.check.outputs.new == 'true'
-        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable branch, pinned
-        with:
-          targets: wasm32-wasip2
-
+      # No toolchain action needed: the runner's rustup reads
+      # rust-toolchain.toml and auto-installs the pinned channel + the
+      # wasm32-wasip2 target on the first cargo invocation.
       - if: steps.check.outputs.new == 'true'
         run: ./build.sh
 
