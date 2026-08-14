@@ -1,0 +1,69 @@
+# Release — cuts a versioned GitHub Release with the built .wasm attached,
+# automatically, whenever the version in Cargo.toml changes on `main`.
+#
+# The workflow: bump `version` in Cargo.toml (semver: MAJOR.MINOR.PATCH) and
+# merge to main. This job reads that version, and if no `vX.Y.Z` release
+# exists for it yet, builds the plugin and publishes the release — creating
+# the `vX.Y.Z` tag at the same commit. No manual tagging needed. (Nothing
+# happens when the version is unchanged, so ordinary commits don't release.)
+#
+# Cargo.toml is the single source of truth: the plugin reports this same
+# version to Ferrofin (descriptor().version = env!("CARGO_PKG_VERSION")), so
+# the release tag, the asset, and what the dashboard shows always agree.
+name: release
+
+on:
+  push:
+    branches: [main]
+
+# Needed to create the tag + release.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # need existing tags to know what's already released
+
+      # Read the semver version from Cargo.toml → v<version>.
+      - id: ver
+        run: |
+          v="$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')"
+          if ! printf '%s' "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Cargo.toml version '$v' is not semver MAJOR.MINOR.PATCH"; exit 1
+          fi
+          echo "tag=v$v" >> "$GITHUB_OUTPUT"
+
+      # Skip everything below if this version was already released.
+      - id: check
+        run: |
+          if git rev-parse "refs/tags/${{ steps.ver.outputs.tag }}" >/dev/null 2>&1; then
+            echo "release the version bump: ${{ steps.ver.outputs.tag }} already tagged — nothing to do"
+            echo "new=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.check.outputs.new == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip2
+
+      - if: steps.check.outputs.new == 'true'
+        run: ./build.sh
+
+      # Publish the release. The asset keeps a CONSTANT name (dist/*.wasm is
+      # your crate name), so both of these URLs are stable and pullable:
+      #   latest:  .../releases/latest/download/<crate_name>.wasm
+      #   pinned:  .../releases/download/vX.Y.Z/<crate_name>.wasm
+      # softprops creates the vX.Y.Z tag at this commit as part of publishing.
+      - if: steps.check.outputs.new == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: ${{ steps.ver.outputs.tag }}
+          generate_release_notes: true
+          files: dist/*.wasm

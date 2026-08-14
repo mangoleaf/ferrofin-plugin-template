@@ -1,0 +1,25 @@
+# Build check — proves the plugin compiles to a component on every push/PR.
+# Releasing is handled separately by release.yml (on a version bump).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # rust-toolchain.toml pins the channel + the wasm32-wasip2 target.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip2
+      - run: ./build.sh
+      # Make the built component downloadable from the run (handy for testing
+      # a branch before you cut a release).
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-wasm
+          path: dist/*.wasm

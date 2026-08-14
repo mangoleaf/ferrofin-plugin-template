@@ -46,6 +46,45 @@ That's the whole loop. From here you only ever touch `src/lib.rs` (and
 
 ---
 
+## Releasing & distribution
+
+When you push this repo to GitHub, the included workflows handle versioned
+releases for you (`.github/workflows/`):
+
+- **`ci.yml`** builds the plugin on every push/PR and uploads the `.wasm` as a
+  run artifact — a build check.
+- **`release.yml`** cuts a **GitHub Release automatically when you bump the
+  version**. `Cargo.toml`'s `version` (semver `MAJOR.MINOR.PATCH`) is the single
+  source of truth — it's also what your plugin reports to Ferrofin. Bump it,
+  merge to `main`, and the workflow builds the plugin, tags `vX.Y.Z`, and
+  publishes a release with the `.wasm` attached. Unchanged version → no release,
+  so ordinary commits don't cut one. (Prefer manual tags? Delete `release.yml`
+  and push `vX.Y.Z` tags yourself against a `files: dist/*.wasm` release step.)
+
+**Pull URLs.** The release asset keeps a constant name (your crate name with
+underscores, e.g. `my_plugin.wasm`), so these URLs are stable:
+
+```
+# newest release
+https://github.com/<owner>/<repo>/releases/latest/download/<crate_name>.wasm
+# a pinned version
+https://github.com/<owner>/<repo>/releases/download/vX.Y.Z/<crate_name>.wasm
+```
+
+**Installing from a URL.** Ferrofin does **not** fetch plugins from a URL — you
+(or an admin) download the `.wasm` and drop it in, then restart:
+
+```sh
+curl -L -o {ferrofin_data_dir}/plugins/<crate_name>.wasm \
+  https://github.com/<owner>/<repo>/releases/latest/download/<crate_name>.wasm
+# …then restart Ferrofin and enable the plugin in the dashboard.
+```
+
+That's a manual (or scripted) step on the server side — there is no in-dashboard
+"install from URL" yet.
+
+---
+
 ## What you implement
 
 Your plugin is the `Guest` trait in `src/lib.rs`. Every method is optional in
