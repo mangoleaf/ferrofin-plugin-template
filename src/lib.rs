@@ -113,6 +113,18 @@ impl Guest for Plugin {
         }]
     }
 
+    /// Your plugin's public-egress allowlist — single-sourced from the
+    /// `egress = [...]` array in Cargo.toml (visible to anyone auditing
+    /// your repo) and ENFORCED by the server: http_fetch to any host not
+    /// listed is refused before DNS. Empty = no internet access.
+    fn declared_egress() -> Vec<String> {
+        env!("FERROFIN_PLUGIN_EGRESS")
+            .split(',')
+            .filter(|e| !e.is_empty())
+            .map(str::to_owned)
+            .collect()
+    }
+
     /// Web-file transformations: literal search/replace patches the server
     /// applies to served jellyfin-web files while your plugin is enabled —
     /// how a plugin injects client-side hooks (script tags, function

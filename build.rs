@@ -11,6 +11,7 @@ fn main() {
     let manifest = std::fs::read_to_string("Cargo.toml").expect("read Cargo.toml");
     let mut in_section = false;
     let mut found = String::new();
+    let mut egress = String::new();
     for line in manifest.lines() {
         let line = line.trim();
         if line.starts_with('[') {
@@ -22,6 +23,19 @@ fn main() {
         }
         if let Some((key, value)) = line.split_once('=') {
             let key = key.trim();
+            if key == "egress" {
+                // A single-line string array: egress = ["a.example", "*.b.example"]
+                egress = value
+                    .trim()
+                    .trim_start_matches('[')
+                    .trim_end_matches(']')
+                    .split(',')
+                    .map(|e| e.trim().trim_matches('"'))
+                    .filter(|e| !e.is_empty())
+                    .collect::<Vec<_>>()
+                    .join(",");
+                continue;
+            }
             let value = value.trim().trim_matches('"');
             if matches!(key, "guid" | "name" | "description") {
                 println!(
@@ -33,6 +47,8 @@ fn main() {
             }
         }
     }
+    // Always emitted (possibly empty) so lib.rs can use env! unconditionally.
+    println!("cargo:rustc-env=FERROFIN_PLUGIN_EGRESS={egress}");
     for required in ["guid", "name", "description"] {
         assert!(
             found.contains(required),

@@ -27,6 +27,11 @@ name = "Hello Ferrofin"
 description = "The hello-world Ferrofin plugin: logs a greeting from a scheduled task."
 owner = "mangoleaf"
 category = "General"
+# YOUR PLUGIN'S ENTIRE PUBLIC NETWORK REACH — the auditable egress allowlist,
+# enforced by the server (deny-by-default; empty = no internet access at all).
+# Exact hosts, "*.sub.example" wildcards, or "*" for user-configured
+# destinations (the server warns loudly about "*" plugins at load).
+egress = []
 
 # A WASM component is a standalone artifact, not part of a Cargo workspace.
 [workspace]
