@@ -121,7 +121,10 @@ impl Guest for Plugin {
             id: "hello".to_owned(),
             name: "Say hello".to_owned(),
             description: "Writes a greeting to the server log.".to_owned(),
-            category: "My Plugin".to_owned(),
+            // The dashboard groups tasks under this header — the plugin's
+            // name (from Cargo.toml) is the right default; override it only
+            // if you want your tasks grouped under something else.
+            category: env!("FERROFIN_PLUGIN_NAME").to_owned(),
         }]
     }
 
