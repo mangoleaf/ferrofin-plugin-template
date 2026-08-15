@@ -113,6 +113,29 @@ impl Guest for Plugin {
         }]
     }
 
+    /// Web-file transformations: literal search/replace patches the server
+    /// applies to served jellyfin-web files while your plugin is enabled —
+    /// how a plugin injects client-side hooks (script tags, function
+    /// wrappers). TRUST NOTE: this is JS injection into EVERY user's
+    /// browser; most plugins should return an empty vec.
+    fn web_transforms() -> Vec<WebTransform> {
+        Vec::new()
+    }
+
+    /// Your plugin's own URL space: the server routes
+    /// `ANY /Plugins/{your-guid}/web/*` here. Reachable WITHOUT
+    /// authentication (assets load via plain <script src> tags) — the
+    /// caller's resolved identity is in `request.user_id` /
+    /// `request.is_admin` / `request.is_authenticated`; gate sensitive
+    /// paths yourself. A plugin that serves no routes returns 404.
+    fn handle_request(_request: PluginRequest) -> PluginResponse {
+        PluginResponse {
+            status: 404,
+            headers: vec![("content-type".to_owned(), "application/json".to_owned())],
+            body: br#"{"error":"this plugin serves no routes"}"#.to_vec(),
+        }
+    }
+
     /// The background tasks your plugin offers. They appear in the dashboard's
     /// "Scheduled Tasks" page and can be run on demand or on a schedule.
     /// Return an empty vec if your plugin has no tasks.
@@ -196,6 +219,14 @@ impl Guest for Plugin {
 //         headers: vec![],
 //         body: None,
 //     })?; // -> HttpResponse { status, headers, body }
+//
+//   Per-plugin key/value state (per-user settings, cursors — NOT config;
+//   the admin never sees it; caps: 256 B key, 1 MiB value, 8 MiB total):
+//     host::set_state("cursor", Some(b"42"))?;      // None deletes
+//     let v: Option<Vec<u8>> = host::get_state("cursor");
+//
+//   The user's next episodes to watch (Jellyfin's NextUp):
+//     let queue = host::next_up(&user_id, 16)?;     // -> Vec<ItemSummary>
 //
 //   Write media segments (Intro/Outro/Recap/Preview/Commercial). Scoped to
 //   your plugin — you can never touch another provider's or a user's segments.

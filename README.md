@@ -104,6 +104,8 @@ spirit — return the empty/`None` default for anything you don't need:
 | `descriptor()` | once at load — your id, name, version | *(required)* |
 | `default_config()` | first install — the seed config JSON | `"{}"` |
 | `config_pages()` | at load — your dashboard settings page(s) | `vec![]` *(Ferrofin then shows a generic JSON editor for your config)* |
+| `web_transforms()` | at load — patches to served jellyfin-web files (client-side hooks; **JS injection into every user's browser** — most plugins: none) | `vec![]` |
+| `handle_request(req)` | per request to `/Plugins/{guid}/web/*` — your plugin's own HTTP API (**anonymous-reachable**; gate on `req.is_admin` etc.) | `404` |
 | `tasks()` | at load — the dashboard tasks you offer | `vec![]` |
 | `run_task(id)` | when a task runs (on demand or scheduled) | — |
 | `on_event(name, json)` | on each server event while enabled | *(do nothing)* |
@@ -124,6 +126,9 @@ and there's a copy-paste cheat-sheet at the bottom of `src/lib.rs`.
 - **`query_items(query)`** — read-only library queries (≤1000 rows per call).
 - **`write_media_segments(item_id, segments)`** — persist Intro/Outro/Recap/…
   segments, scoped to your plugin.
+- **`get_state(key)` / `set_state(key, value)`** — a small per-plugin key/value
+  store (per-user settings, cursors; the admin never sees it).
+- **`next_up(user_id, limit)`** — the user's next-episodes queue.
 
 ## The sandbox: what you can and can't do
 
@@ -177,7 +182,7 @@ loadable plugin. If you go that route, this repo is still useful as the contract
 
 ## Contract version
 
-The vendored `wit/ferrofin-plugin.wit` is `ferrofin:plugin@0.2.0`. **It is 0.x
+The vendored `wit/ferrofin-plugin.wit` is `ferrofin:plugin@0.3.0`. **It is 0.x
 and unstable** — a minor bump may require rebuilding, and the server refuses to
 load a component built against a different version (it names both versions in
 the error). To target a newer server, replace `wit/ferrofin-plugin.wit` with
