@@ -125,6 +125,23 @@ impl Guest for Plugin {
             .collect()
     }
 
+    /// The item kinds your plugin ANALYZES ("Movie", "Episode", "Audio",
+    /// ...). Return them and the server offers each new matching item to
+    /// `scan_media` (once per item, host-tracked) — pull decoded data with
+    /// `host::media_info` / `host::extract_audio` / `host::extract_frames`
+    /// (the host decodes, your plugin analyzes) and persist results via
+    /// `write_media_segments` / `set_state`. Empty = not an analyzer.
+    fn scan_targets() -> Vec<String> {
+        Vec::new()
+    }
+
+    /// Analyzes one offered library item. Never called unless
+    /// `scan_targets()` is non-empty. Errors are logged and count toward
+    /// your plugin's failure breaker — they never fail the library scan.
+    fn scan_media(_item: ItemSummary) -> Result<(), String> {
+        Ok(())
+    }
+
     /// Web-file transformations: literal search/replace patches the server
     /// applies to served jellyfin-web files while your plugin is enabled —
     /// how a plugin injects client-side hooks (script tags, function
