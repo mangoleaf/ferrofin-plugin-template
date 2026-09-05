@@ -23,7 +23,7 @@ first build (see `rust-toolchain.toml`).
 
 ```sh
 # 1. Clone this template (rename the directory to your plugin).
-git clone <this-repo> my-ferrofin-plugin && cd my-ferrofin-plugin
+git clone https://github.com/mangoleaf/ferrofin-plugin-template my-ferrofin-plugin && cd my-ferrofin-plugin
 
 # 2. Give your plugin a unique identity.
 uuidgen        # copy the result…
