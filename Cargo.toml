@@ -8,7 +8,7 @@
 [package]
 # TODO: rename this to your plugin's crate name (lowercase-with-dashes).
 name = "ferrofin-plugin-template"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 # TODO: choose your plugin's license (this is YOUR code). See README "Licensing".
 license = "MIT OR Apache-2.0"

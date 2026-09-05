@@ -125,6 +125,13 @@ impl Guest for Plugin {
             .collect()
     }
 
+    /// Your identity as a NAMED metadata provider (shown in the
+    /// dashboard's library fetcher lists). `None` unless your plugin
+    /// contributes metadata via `metadata_lookup`.
+    fn provider_info() -> Option<ProviderDescriptor> {
+        None
+    }
+
     /// The item kinds your plugin ANALYZES ("Movie", "Episode", "Audio",
     /// ...). Return them and the server offers each new matching item to
     /// `scan_media` (once per item, host-tracked) — pull decoded data with
@@ -212,6 +219,11 @@ impl Guest for Plugin {
     /// source — that is the common case, and the default here. Results are
     /// applied supplement-only: you can fill fields the item still lacks, never
     /// overwrite the built-in providers or the user's edits.
+    fn remote_images(_item: ItemSummary) -> Result<Vec<ImageCandidate>, String> {
+        // Not an artwork provider.
+        Ok(vec![])
+    }
+
     fn metadata_lookup(
         _item: ItemSummary,
         _provider_ids: Vec<(String, String)>,
