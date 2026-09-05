@@ -60,9 +60,16 @@ while IFS=$'\t' read -r tag published; do
   md5="$(md5sum "$tmp/$asset" | cut -d' ' -f1)"
   sha="$(sha256sum "$tmp/$asset" | cut -d' ' -f1)"
   rm -rf "$tmp"
+  # targetAbi is the contract THIS release was built against — read the WIT
+  # at the release's tag, not the working tree's (older releases must not be
+  # relabelled with a newer world version). Falls back to the current WIT
+  # only for a tag whose tree predates the vendored contract.
+  abi="$(git show "$tag:wit/ferrofin-plugin.wit" 2>/dev/null \
+    | sed -n 's/^package \(ferrofin:plugin@[0-9.]*\);$/\1/p')"
+  [ -n "$abi" ] || abi="$TARGET_ABI"
   versions="$(jq -c \
     --arg version "${tag#v}" \
-    --arg abi "$TARGET_ABI" \
+    --arg abi "$abi" \
     --arg url "https://github.com/$REPO/releases/download/$tag/$asset" \
     --arg md5 "$md5" --arg sha "$sha" --arg ts "$published" \
     --arg rname "$REPO" --arg rurl "https://github.com/$REPO" \
