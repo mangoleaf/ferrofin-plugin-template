@@ -8,20 +8,28 @@
 //! The skeleton below compiles and runs as-is (it registers one "hello" task
 //! that writes a log line). Replace the bodies with your plugin's behavior.
 
-wit_bindgen::generate!({
-    // The vendored contract in this repo. Don't change this path.
-    path: "wit",
-    world: "plugin",
-});
+// WIT's generated ABI functions flatten records into many arguments.
+// Keep this allowance scoped to bindings so plugin code still gets the lint.
+#[allow(clippy::too_many_arguments)]
+mod bindings {
+    wit_bindgen::generate!({
+        // The vendored contract in this repo. Don't change this path.
+        path: "wit",
+        world: "plugin",
+    });
+}
+
+use bindings::*;
 
 // The host functions you may call. This is the ENTIRE set — no filesystem,
 // no sockets, nothing else exists inside the sandbox.
 use ferrofin::plugin::host;
 use ferrofin::plugin::types::LogLevel;
 // `generate!` hoists the record types the world uses (PluginDescriptor,
-// TaskDescriptor, ItemSummary, MetadataResult, …) to the crate root, so they
-// need no `use`. The rest (HttpRequest, ItemQuery, MediaSegment) live under
-// `ferrofin::plugin::types` — import them where you use them.
+// TaskDescriptor, ItemSummary, MetadataResult, …) to the bindings module;
+// `use bindings::*` imports them here. The rest (HttpRequest, ItemQuery,
+// MediaSegment) live under `ferrofin::plugin::types` — import them where you
+// use them.
 
 /// Your plugin. Hold any in-memory state on this type's statics (a plugin
 /// instance lives for the whole server run). Nothing here is persisted;
@@ -281,4 +289,4 @@ impl Guest for Plugin {
 // ──────────────────────────────────────────────────────────────────────────
 
 // Wires `Plugin` up as the component's exports. Keep this as the last line.
-export!(Plugin);
+bindings::export!(Plugin with_types_in bindings);
