@@ -43,7 +43,7 @@ crate-type = ["cdylib"]
 [dependencies]
 # The only required dependency: it turns wit/ferrofin-plugin.wit into the Rust
 # `Guest` trait + `host` bindings you implement in src/lib.rs.
-wit-bindgen = "0.60"
+wit-bindgen = "0.63"
 # Add whatever your plugin needs (serde_json is a common one for parsing the
 # config JSON and any http-fetch response bodies). Remember: no crate that
 # touches the filesystem or opens sockets will work — the sandbox denies both.
