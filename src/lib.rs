@@ -161,7 +161,9 @@ impl Guest for Plugin {
     /// applies to served jellyfin-web files while your plugin is enabled —
     /// how a plugin injects client-side hooks (script tags, function
     /// wrappers). TRUST NOTE: this is JS injection into EVERY user's
-    /// browser; most plugins should return an empty vec.
+    /// browser; most plugins should return an empty vec. `path_pattern` is
+    /// an exact path or a Rust regex, not a glob (see `web-transform` in the
+    /// WIT).
     fn web_transforms() -> Vec<WebTransform> {
         Vec::new()
     }
@@ -170,8 +172,11 @@ impl Guest for Plugin {
     /// `ANY /Plugins/{your-guid}/web/*` here. Reachable WITHOUT
     /// authentication (assets load via plain <script src> tags) — the
     /// caller's resolved identity is in `request.user_id` /
-    /// `request.is_admin` / `request.is_authenticated`; gate sensitive
-    /// paths yourself. A plugin that serves no routes returns 404.
+    /// `request.is_admin` / `request.is_authenticated` (a disabled or
+    /// out-of-schedule user arrives as anonymous); gate sensitive
+    /// paths yourself. A plugin that serves no routes returns 404. The host
+    /// drops some response headers and adds its own (see `plugin-response`
+    /// in the WIT).
     fn handle_request(_request: PluginRequest) -> PluginResponse {
         PluginResponse {
             status: 404,
@@ -222,16 +227,24 @@ impl Guest for Plugin {
     /// events for you. Do nothing here if you don't need events.
     fn on_event(_event_name: String, _event_json: String) {}
 
-    /// Offers metadata for one library item during a scan, AFTER the built-in
-    /// providers ran. Return `Ok(None)` unless your plugin is a metadata
-    /// source — that is the common case, and the default here. Results are
-    /// applied supplement-only: you can fill fields the item still lacks, never
-    /// overwrite the built-in providers or the user's edits.
+    /// Remote-artwork candidates for an item still missing artwork after the
+    /// built-in providers ran. Empty unless your plugin is an artwork source.
     fn remote_images(_item: ItemSummary) -> Result<Vec<ImageCandidate>, String> {
         // Not an artwork provider.
         Ok(vec![])
     }
 
+    /// Offers metadata for one library item when the scanner refreshes it, as
+    /// one of the item kind's remote providers, at your plugin's rank in the
+    /// library's metadata-fetcher order (the admin ranks you there only when
+    /// `provider_info` returns `Some`; otherwise you run like a provider left
+    /// out of the order). Return `Ok(None)` unless your plugin is a metadata
+    /// source — that is the common case, and the default here. Local
+    /// metadata (NFO, embedded tags) comes first; among the remote providers
+    /// the first to supply a field wins it, later ones fill only what is
+    /// still empty (studios and tags union), and fields the user locked are
+    /// never touched. An `Err` counts as a provider failure: the next scan
+    /// asks again.
     fn metadata_lookup(
         _item: ItemSummary,
         _provider_ids: Vec<(String, String)>,
