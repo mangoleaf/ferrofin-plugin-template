@@ -182,7 +182,7 @@ loadable plugin. If you go that route, this repo is still useful as the contract
 
 ## Contract version
 
-The vendored `wit/ferrofin-plugin.wit` is `ferrofin:plugin@0.3.0`. **It is 0.x
+The vendored `wit/ferrofin-plugin.wit` is `ferrofin:plugin@0.5.0`. **It is 0.x
 and unstable** — a minor bump may require rebuilding, and the server refuses to
 load a component built against a different version (it names both versions in
 the error). To target a newer server, replace `wit/ferrofin-plugin.wit` with
