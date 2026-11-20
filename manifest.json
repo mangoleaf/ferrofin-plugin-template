@@ -8,6 +8,16 @@
     "guid": "77d9370b-2875-44f8-be55-decd46652c49",
     "versions": [
       {
+        "version": "0.2.1",
+        "targetAbi": "ferrofin:plugin@0.5.0",
+        "sourceUrl": "https://github.com/mangoleaf/ferrofin-plugin-template/releases/download/v0.2.1/ferrofin_plugin_template.wasm",
+        "checksum": "862ce64790be208b5c440dd8d4828c2c",
+        "sha256": "fadb2d5e1ae1cb3165dd30d8c22d440aa33e61ea5b5ccb3cae46082e2f722e64",
+        "timestamp": "2026-11-10T16:14:49Z",
+        "repositoryName": "mangoleaf/ferrofin-plugin-template",
+        "repositoryUrl": "https://github.com/mangoleaf/ferrofin-plugin-template"
+      },
+      {
         "version": "0.2.0",
         "targetAbi": "ferrofin:plugin@0.5.0",
         "sourceUrl": "https://github.com/mangoleaf/ferrofin-plugin-template/releases/download/v0.2.0/ferrofin_plugin_template.wasm",
